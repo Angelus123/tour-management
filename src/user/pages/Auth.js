@@ -11,14 +11,14 @@ import {
   VALIDATOR_REQUIRE
 } from '../../shared/util/validators';
 import { useForm } from '../../shared/hooks/form-hook';
+import { useHttpClient } from '../../shared/hooks/http-hook';
 import { AuthContext } from '../../shared/context/auth-context';
 import './Auth.css';
 
 const Auth = () => {
   const auth = useContext(AuthContext);
   const [isLoginMode, setIsLoginMode] = useState(true);
-  const [isLoading, setIsLoading]=useState(false);
-  const [error, setError]=useState(false);
+  const { isLoading, error, sendRequest, clearError} = useHttpClient()
 
 
   const [formState, inputHandler, setFormData] = useForm(
@@ -61,78 +61,63 @@ const Auth = () => {
 
   const authSubmitHandler = async event => {
     event.preventDefault();
-    setIsLoading(true);
+   
 
     if (isLoginMode) {
-      try {
-        
-        setError(null);
-        console.log(formState.inputs.email.value);
-        const response = await fetch('http://localhost:5000/api/users/login', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          
-          
-          body: JSON.stringify({ 
+    try {
+      console.log(formState.inputs.email.value);
+      await sendRequest(
+        'http://localhost:5000/api/users/login',
+        'POST',
+        JSON.stringify({ 
             email: formState.inputs.email.value,
             password: formState.inputs.password.value
           })
-        });
-
-        const responseData = await response.json();
-        if(!response.ok){
-          throw new Error(responseData.message)
+          ,
+         {
+          'Content-Type': 'application/json'
         }
+      );
+         
+      auth.login();
       
-        setIsLoading(false);
-        auth.login();
+    } catch (err) {
+      
+    }
        
-      } catch (err) {
-        console.log(err);
-        setError(err.message || 'Something went wrong, please try again.')
-        setIsLoading(false);
-      }
+
+     
+      
+    
+       
+    
     } else {
-      try {
-        
-        setError(null);
-        console.log(formState.inputs.email.value);
-        const response = await fetch('http://localhost:5000/api/users/signup', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          
-          
-          body: JSON.stringify({
-            name: formState.inputs.name.value,
-            email: formState.inputs.email.value,
-            password: formState.inputs.password.value
-          })
-        });
+   try {
+    console.log(formState.inputs.email.value);
+    await sendRequest(
+      'http://localhost:5000/api/users/signup',
+      'POST',
+      JSON.stringify({
+        name: formState.inputs.name.value,
+        email: formState.inputs.email.value,
+        password: formState.inputs.password.value
+      }),
+       { 'Content-Type': 'application/json'}
+    )
 
-        const responseData = await response.json();
-        if(!response.ok){
-          throw new Error(responseData.message)
-        }
-
-        setIsLoading(false);
-        auth.login();
-       
-      } catch (err) {
-        console.log(err);
-        setError(err.message || 'Something went wrong, please try again.')
-        setIsLoading(false);
-      }
+    auth.login();
+     
+   } catch (error) {
+     
+   }
+    
     }
 
     
   };
-  const errorHandler = () => {
-    setError(null);
-  }
+const errorHandler = () => {
+  clearError();
+}
 
   return (
     <React.Fragment>
